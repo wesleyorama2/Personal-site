@@ -35,6 +35,118 @@ func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
 	return f, nil
 }
 
+func serveSite(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+		// Add X-XSS-Protection header
+		w.Header().Add("X-XSS-Protection", "1; mode=blockFilter")
+		// Add Content-Type header
+		w.Header().Add("Content-Type", "text/html")
+		// Add X-Content-Type-Options header
+		w.Header().Add("X-Content-Type-Options", "nosniff")
+		// Prevent page from being displayed in an iframe
+		w.Header().Add("X-Frame-Options", "DENY")
+
+		h.ServeHTTP(w, r)
+	})
+}
+
+func serveVendor(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+		// Add X-XSS-Protection header
+		w.Header().Add("X-XSS-Protection", "1; mode=blockFilter")
+		// Add Content-Type header
+		w.Header().Add("Content-Type", "text/css")
+		// Add X-Content-Type-Options header
+		w.Header().Add("X-Content-Type-Options", "nosniff")
+		// Prevent page from being displayed in an iframe
+		w.Header().Add("X-Frame-Options", "DENY")
+
+		h.ServeHTTP(w, r)
+	})
+}
+
+func serveJS(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+		// Add X-XSS-Protection header
+		w.Header().Add("X-XSS-Protection", "1; mode=blockFilter")
+		// Add Content-Type header
+		w.Header().Add("Content-Type", "application/javascript")
+		// Add X-Content-Type-Options header
+		w.Header().Add("X-Content-Type-Options", "nosniff")
+		// Prevent page from being displayed in an iframe
+		w.Header().Add("X-Frame-Options", "DENY")
+
+		h.ServeHTTP(w, r)
+	})
+}
+
+func servevendorSiteBootstrapJS(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+		// Add X-XSS-Protection header
+		w.Header().Add("X-XSS-Protection", "1; mode=blockFilter")
+		// Add Content-Type header
+		w.Header().Add("Content-Type", "application/javascript")
+		// Add X-Content-Type-Options header
+		w.Header().Add("X-Content-Type-Options", "nosniff")
+		// Prevent page from being displayed in an iframe
+		w.Header().Add("X-Frame-Options", "DENY")
+
+		h.ServeHTTP(w, r)
+	})
+}
+
+func servevendorJquery(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+		// Add X-XSS-Protection header
+		w.Header().Add("X-XSS-Protection", "1; mode=blockFilter")
+		// Add Content-Type header
+		w.Header().Add("Content-Type", "application/javascript")
+		// Add X-Content-Type-Options header
+		w.Header().Add("X-Content-Type-Options", "nosniff")
+		// Prevent page from being displayed in an iframe
+		w.Header().Add("X-Frame-Options", "DENY")
+
+		h.ServeHTTP(w, r)
+	})
+}
+
+func servevendorJqueryEasing(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+		// Add X-XSS-Protection header
+		w.Header().Add("X-XSS-Protection", "1; mode=blockFilter")
+		// Add Content-Type header
+		w.Header().Add("Content-Type", "application/javascript")
+		// Add X-Content-Type-Options header
+		w.Header().Add("X-Content-Type-Options", "nosniff")
+		// Prevent page from being displayed in an iframe
+		w.Header().Add("X-Frame-Options", "DENY")
+
+		h.ServeHTTP(w, r)
+	})
+}
+
+func serveCSS(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+		// Add X-XSS-Protection header
+		w.Header().Add("X-XSS-Protection", "1; mode=blockFilter")
+		// Add Content-Type header
+		w.Header().Add("Content-Type", "text/css")
+		// Add X-Content-Type-Options header
+		w.Header().Add("X-Content-Type-Options", "nosniff")
+		// Prevent page from being displayed in an iframe
+		w.Header().Add("X-Frame-Options", "DENY")
+
+		h.ServeHTTP(w, r)
+	})
+}
+
 func (s *Configuration) makeServerFromMux(mux *http.ServeMux) *http.Server {
 	port := fmt.Sprintf(":%d", s.DevPort)
 	// set timeouts so that a slow or malicious client doesn't
@@ -50,8 +162,20 @@ func (s *Configuration) makeServerFromMux(mux *http.ServeMux) *http.Server {
 
 func (s *Configuration) makeHTTPServer() *http.Server {
 	mux := http.NewServeMux()
-	fileServer := http.FileServer(neuteredFileSystem{http.Dir("web")})
-	mux.Handle("/", http.StripPrefix("/", fileServer))
+	rootSite := http.FileServer(neuteredFileSystem{http.Dir("/usr/bin/web/")})
+	vendorSite := http.FileServer(neuteredFileSystem{http.Dir("/usr/bin/web/vendor")})
+	vendorCSS := http.FileServer(neuteredFileSystem{http.Dir("/usr/bin/web/css")})
+	vendorSiteBootstrapJS := http.FileServer(neuteredFileSystem{http.Dir("/usr/bin/web/vendor/bootstrap/js")})
+	vendorJquery := http.FileServer(neuteredFileSystem{http.Dir("/usr/bin/web/vendor/jquery")})
+	vendorJqueryEasing := http.FileServer(neuteredFileSystem{http.Dir("/usr/bin/web/vendor/jquery-easing")})
+	vendorJS := http.FileServer(neuteredFileSystem{http.Dir("/usr/bin/web/js")})
+	mux.Handle("/", http.StripPrefix("/", serveSite(rootSite)))
+	mux.Handle("/css/", http.StripPrefix("/css", serveCSS(vendorCSS)))
+	mux.Handle("/vendor/jquery/", http.StripPrefix("/vendor/jquery", servevendorJquery(vendorJquery)))
+	mux.Handle("/vendor/jquery-easing/", http.StripPrefix("/vendor/jquery-easing", servevendorJqueryEasing(vendorJqueryEasing)))
+	mux.Handle("/vendor/bootstrap/js/", http.StripPrefix("/vendor/bootstrap/js", servevendorSiteBootstrapJS(vendorSiteBootstrapJS)))
+	mux.Handle("/vendor/", http.StripPrefix("/vendor", serveVendor(vendorSite)))
+	mux.Handle("/js/", http.StripPrefix("/js", serveJS(vendorJS)))
 	return s.makeServerFromMux(mux)
 
 }

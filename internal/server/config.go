@@ -21,6 +21,7 @@ type Configuration struct {
 	IdleTimeout  time.Duration `required:"ignore"` // sets the idle timeout for the server, defaults to 120
 	LogLevel     log.Level     `required:"ignore"` // sets the log level for the server, defaults to Debug
 	HTTPServer   *http.Server  `required:"false"`  // this is expected to only be set by the server.go file, however it is exported incase that should change.
+	FilesRoot    string        `required:"ignore"` // sets the directory where the static files are stored
 }
 
 // NewConfig looks for a file named "config.yaml" in "./" and returns the address to unmarshaled configuration struct.
@@ -36,6 +37,7 @@ func NewConfig() (*Configuration, error) {
 		"WriteTimeout": 5,
 		"IdleTimeout":  120,
 		"LogLevel":     log.DebugLevel,
+		"FilesRoot":    "./web",
 	}
 
 	v := viper.New()

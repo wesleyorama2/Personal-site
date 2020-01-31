@@ -147,7 +147,7 @@ func serveCSS(h http.Handler) http.Handler {
 }
 
 func (s *Configuration) makeServerFromMux(mux *http.ServeMux) *http.Server {
-	port := fmt.Sprintf(":%d", s.DevPort)
+	port := fmt.Sprintf(":%d", s.Port)
 	// set timeouts so that a slow or malicious client doesn't
 	// hold resources forever
 	return &http.Server{

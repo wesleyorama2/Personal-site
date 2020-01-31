@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net/http"
 	"strings"
@@ -148,7 +147,7 @@ func serveCSS(h http.Handler) http.Handler {
 }
 
 func (s *Configuration) makeServerFromMux(mux *http.ServeMux) *http.Server {
-	port := fmt.Sprintf(":%d", s.DevPort)
+	port := fmt.Sprintf(":%d", s.Port)
 	// set timeouts so that a slow or malicious client doesn't
 	// hold resources forever
 	return &http.Server{
@@ -185,44 +184,48 @@ func (s *Configuration) makeHTTPServer() *http.Server {
 func (s *Configuration) Start() {
 	var err error
 
-	if s.Production {
-		s.HTTPServer = s.makeHTTPServer()     // Use the http.Server struct returned from makeServerFromMux as a foundation.
-		s.HTTPServer.Addr = ":443"            // Because its my personal server, I only want to run in "prod" using 443. I am sure this wont come back to bite me.
-		s.HTTPServer.TLSNextProto = nil       // ensure that this isn't an empty map as that would disable HTTP/2
-		s.HTTPServer.TLSConfig = &tls.Config{ // Add the TLS config defined here to the httpServer defined above.
-			MinVersion:               tls.VersionTLS12,                         // don't allow TLS lower than v1.2
-			CurvePreferences:         []tls.CurveID{tls.X25519, tls.CurveP256}, // Only use curves which have assembly implementations
-			PreferServerCipherSuites: true,                                     // Ensures safer and faster cipher suites are preferred
-			CipherSuites: []uint16{ // Only Ciphers that provide Forward Secrecy
-				tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-				tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
-				tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
-				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-			},
-			NextProtos: []string{"h2", "http/1.1"}, // enables HTTP/2
-		}
-		log.Infof("starting HTTPS server on %s\n", s.HTTPServer.Addr)
-		err = s.HTTPServer.ListenAndServeTLS(s.CertFile, s.KeyFile) // Serve the site using TLS and the config above, note this blocks
-		if err != http.ErrServerClosed {
-			log.WithError(err).Error("http Server stopped unexpected")
-			s.Shutdown()
-		} else {
-			log.WithError(err).Info("http Server stopped")
-		}
+	// commented this all out, since I got tired of running this on a pi and now its on heroku. So
+	// I dont have to worry about certs now. The heroku LB handles that now...
+
+	// if s.Production {
+	// 	s.HTTPServer = s.makeHTTPServer()     // Use the http.Server struct returned from makeServerFromMux as a foundation.
+	// 	s.HTTPServer.Addr = ":443"            // Because its my personal server, I only want to run in "prod" using 443. I am sure this wont come back to bite me.
+	// 	s.HTTPServer.TLSNextProto = nil       // ensure that this isn't an empty map as that would disable HTTP/2
+	// 	s.HTTPServer.TLSConfig = &tls.Config{ // Add the TLS config defined here to the httpServer defined above.
+	// 		MinVersion:               tls.VersionTLS12,                         // don't allow TLS lower than v1.2
+	// 		CurvePreferences:         []tls.CurveID{tls.X25519, tls.CurveP256}, // Only use curves which have assembly implementations
+	// 		PreferServerCipherSuites: true,                                     // Ensures safer and faster cipher suites are preferred
+	// 		CipherSuites: []uint16{ // Only Ciphers that provide Forward Secrecy
+	// 			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+	// 			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+	// 			tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
+	// 			tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
+	// 			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+	// 			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+	// 		},
+	// 		NextProtos: []string{"h2", "http/1.1"}, // enables HTTP/2
+	// 	}
+	// 	log.Infof("starting HTTPS server on %s\n", s.HTTPServer.Addr)
+	// 	err = s.HTTPServer.ListenAndServeTLS(s.CertFile, s.KeyFile) // Serve the site using TLS and the config above, note this blocks
+	// 	if err != http.ErrServerClosed {
+	// 		log.WithError(err).Error("http Server stopped unexpected")
+	// 		s.Shutdown()
+	// 	} else {
+	// 		log.WithError(err).Info("http Server stopped")
+	// 	}
+	// } else {
+	s.HTTPServer = s.makeHTTPServer() // Use the http.Server struct returned from makeServerFromMux.
+	log.Infof("starting HTTP server on %s\n", s.HTTPServer.Addr)
+	err = s.HTTPServer.ListenAndServe() // Serve the site without TLS since "Production" isn't set, note this blocks
+	if err != http.ErrServerClosed {
+		log.WithError(err).Error("http Server stopped unexpected")
+		s.Shutdown() // If there is an error try to shutdown the server gracefully
 	} else {
-		s.HTTPServer = s.makeHTTPServer() // Use the http.Server struct returned from makeServerFromMux.
-		log.Infof("starting HTTP server on %s\n", s.HTTPServer.Addr)
-		err = s.HTTPServer.ListenAndServe() // Serve the site without TLS since "Production" isn't set, note this blocks
-		if err != http.ErrServerClosed {
-			log.WithError(err).Error("http Server stopped unexpected")
-			s.Shutdown() // If there is an error try to shutdown the server gracefully
-		} else {
-			log.WithError(err).Info("http Server stopped")
-		}
+		log.WithError(err).Info("http Server stopped")
 	}
 }
+
+// }
 
 // Shutdown attempts to shutdown the server gracefully.
 func (s *Configuration) Shutdown() {

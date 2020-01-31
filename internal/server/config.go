@@ -13,7 +13,7 @@ import (
 // Configuration contains the server configuration.
 type Configuration struct {
 	Production   bool          `required:"true"`   // if set to true the the server will only respond on 443, otherwise it will respond on the value of DevPort
-	DevPort      int           `required:"ignore"` // sets the port that the server will respond to if Production is false, defaults to 8080
+	Port         int           `required:"ignore"` // sets the port that the server will respond to if Production is false, defaults to 8080
 	CertFile     string        `required:"ignore"` // sets the directory where the CertFile is stored on the FS
 	KeyFile      string        `required:"ignore"` // sets the directories where the KeyFile is stored on the FS
 	ReadTimeout  time.Duration `required:"ignore"` // sets the read timeout for the server, defaults to 5
@@ -32,7 +32,7 @@ func NewConfig() (*Configuration, error) {
 	var required []string
 	defaults := map[string]interface{}{
 		"Production":   false,
-		"DevPort":      8080,
+		"Port":         8080,
 		"ReadTimeout":  5,
 		"WriteTimeout": 5,
 		"IdleTimeout":  120,
